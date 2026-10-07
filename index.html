@@ -1,0 +1,1013 @@
+<!DOCTYPE html>
+<html lang="sr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0E3B43">
+<title>Servisna knjiga</title>
+<style>
+:root{
+  --bg:#EAF0F2; --surface:#FFFFFF; --surface-2:#F5F9FA;
+  --brand:#0E3B43; --brand-2:#17545C; --accent:#00A3AD; --accent-soft:#DFF4F5;
+  --ink:#0E1C20; --muted:#5E767C; --line:#D8E3E6;
+  --red:#DC3B2B; --red-bg:#FDEBE8; --red-line:#F6C4BC;
+  --amber:#CF7D00; --amber-bg:#FDF3DF; --amber-line:#F2DCA8;
+  --green:#0B9A6D; --green-bg:#E4F6EF; --green-line:#B6E5D3;
+  --r:14px; --r-sm:10px;
+  --shadow:0 1px 2px rgba(14,28,32,.05), 0 6px 16px rgba(14,28,32,.06);
+  --shadow-lift:0 2px 4px rgba(14,28,32,.07), 0 12px 28px rgba(14,28,32,.10);
+  --mono: ui-monospace,"SF Mono","Cascadia Mono","Roboto Mono",Consolas,monospace;
+  --sans: ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0;overflow-x:hidden}
+body{background:var(--bg);color:var(--ink);font-family:var(--sans);font-size:16px;
+  line-height:1.45;-webkit-font-smoothing:antialiased;padding-bottom:28px}
+.wrap{max-width:1140px;margin:0 auto;padding:0 16px}
+
+header{background:var(--brand);color:#fff;position:sticky;top:0;z-index:20;
+  box-shadow:0 6px 20px rgba(14,59,67,.22)}
+.hbar{display:flex;align-items:center;gap:12px;padding:15px 0 14px}
+.logo{width:30px;height:30px;border-radius:9px;flex:0 0 auto;background:var(--accent);
+  display:grid;place-items:center}
+.logo svg{width:17px;height:17px;display:block}
+.htext .mark{display:block;font-family:var(--mono);font-size:10px;letter-spacing:.2em;
+  text-transform:uppercase;color:#7FC3C9;line-height:1.2}
+.htext h1{margin:0;font-size:18px;font-weight:650;letter-spacing:-.015em;line-height:1.25}
+.hcount{margin-left:auto;font-family:var(--mono);font-size:12px;background:rgba(255,255,255,.12);
+  color:#DCF1F3;padding:5px 10px;border-radius:999px;white-space:nowrap}
+
+.banner{background:var(--amber-bg);border-bottom:1px solid var(--amber-line);
+  color:#7A4C00;font-size:13.5px;padding:10px 16px}
+.banner b{font-weight:650}
+
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:9px;margin:16px 0 14px}
+.stat{background:var(--surface);border:1px solid var(--line);border-radius:var(--r-sm);
+  padding:11px 12px;box-shadow:var(--shadow)}
+.stat b{display:block;font-family:var(--mono);font-size:24px;font-weight:600;
+  line-height:1.05;letter-spacing:-.02em}
+.stat span{display:block;font-size:11.5px;color:var(--muted);margin-top:3px}
+.stat.r{border-color:var(--red-line);background:var(--red-bg)}   .stat.r b{color:var(--red)}
+.stat.a{border-color:var(--amber-line);background:var(--amber-bg)} .stat.a b{color:var(--amber)}
+.stat.g{border-color:var(--green-line);background:var(--green-bg)} .stat.g b{color:var(--green)}
+
+nav{display:flex;gap:6px;max-width:1140px;margin:0 auto;padding:11px 16px 3px;
+  overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none}
+nav::-webkit-scrollbar{display:none}
+nav button{flex:1 0 auto;background:var(--surface);border:1px solid var(--line);
+  border-radius:var(--r-sm);padding:8px 12px;cursor:pointer;white-space:nowrap;
+  font-family:var(--sans);font-size:12px;color:var(--muted);
+  transition:background .15s ease,color .15s ease,border-color .15s ease}
+nav button .n{font-family:var(--mono);font-size:13px;font-weight:600;
+  color:var(--ink);letter-spacing:-.01em;margin-right:7px}
+nav button[aria-selected="true"]{background:var(--accent-soft);color:var(--brand);
+  border-color:var(--accent)}
+nav button[aria-selected="true"] .n{color:var(--brand)}
+nav button:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+
+section[hidden]{display:none}
+.sect{padding:4px 0 10px}
+.eyebrow{font-family:var(--mono);font-size:10.5px;letter-spacing:.16em;text-transform:uppercase;
+  color:var(--muted);margin:14px 0 10px}
+.empty{background:var(--surface);border:1px dashed var(--line);border-radius:var(--r);
+  padding:34px 22px;text-align:center;color:var(--muted);font-size:14.5px}
+.empty b{display:block;color:var(--ink);font-size:16.5px;font-weight:650;margin-bottom:5px}
+
+button.act,a.act{display:inline-block;font-family:var(--sans);font-size:14px;font-weight:600;
+  background:var(--brand);color:#fff;border:0;border-radius:var(--r-sm);padding:10px 16px;
+  cursor:pointer;text-decoration:none;line-height:1.3;box-shadow:0 1px 2px rgba(14,28,32,.12);
+  transition:background .15s ease,transform .1s ease}
+button.act:hover,a.act:hover{background:var(--brand-2)}
+button.act:active,a.act:active{transform:translateY(1px)}
+button.act.accent{background:var(--accent)} button.act.accent:hover{background:#00919A}
+button.act.ghost,a.act.ghost{background:var(--surface);color:var(--brand);
+  border:1px solid var(--line);box-shadow:none}
+button.act.ghost:hover,a.act.ghost:hover{background:var(--surface-2);border-color:var(--accent)}
+button.act.sm,a.act.sm{font-size:12.5px;padding:8px 12px}
+button.act:focus-visible,a.act:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+
+ul.rows{list-style:none;margin:0;padding:0}
+li.row{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);
+  margin-bottom:9px;padding:13px 14px;display:grid;grid-template-columns:50px minmax(0,1fr) auto;
+  gap:13px;align-items:center;box-shadow:var(--shadow);cursor:pointer;border-left-width:4px;
+  transition:box-shadow .16s ease,transform .16s ease,border-color .16s ease}
+li.row>*{min-width:0}
+li.row:hover{box-shadow:var(--shadow-lift);transform:translateY(-1px)}
+li.row:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+li.row.late{border-left-color:var(--red);background:linear-gradient(90deg,var(--red-bg) 0%,var(--surface) 46%)}
+li.row.soon{border-left-color:var(--amber);background:linear-gradient(90deg,var(--amber-bg) 0%,var(--surface) 46%)}
+li.row.fine{border-left-color:var(--green)}
+li.row.sel{border-color:var(--accent);border-left-color:var(--accent);box-shadow:var(--shadow-lift)}
+
+.name{font-weight:650;font-size:15.5px;letter-spacing:-.012em;overflow-wrap:anywhere}
+.meta{font-family:var(--mono);font-size:11px;color:var(--muted);margin-top:3px;overflow-wrap:anywhere}
+.pills{display:flex;flex-wrap:wrap;gap:4px;margin-top:6px;min-width:0}
+.pill{font-family:var(--mono);font-size:10px;padding:3px 7px;border-radius:999px;
+  border:1px solid var(--line);color:var(--muted);background:var(--surface-2);white-space:nowrap;
+  max-width:100%;overflow:hidden;text-overflow:ellipsis}
+.pill.late{background:var(--red-bg);border-color:var(--red-line);color:var(--red)}
+.pill.soon{background:var(--amber-bg);border-color:var(--amber-line);color:var(--amber)}
+.pill.fine{background:var(--green-bg);border-color:var(--green-line);color:var(--green)}
+
+.chip{display:inline-block;font-family:var(--mono);font-size:12px;font-weight:600;
+  padding:5px 10px;border-radius:999px;white-space:nowrap;letter-spacing:-.01em;max-width:100%}
+.chip.late{background:var(--red-bg);color:var(--red);border:1px solid var(--red-line)}
+.chip.soon{background:var(--amber-bg);color:var(--amber);border:1px solid var(--amber-line)}
+.chip.fine{background:var(--green-bg);color:var(--green);border:1px solid var(--green-line)}
+.state{text-align:right;min-width:0}
+.state small{display:block;font-family:var(--mono);font-size:10px;color:var(--muted);margin-top:4px}
+@media (max-width:430px){
+  li.row{gap:10px;padding:12px 11px}
+  .chip{font-size:11px;padding:4px 8px}
+  .state small{display:none}
+}
+
+.gauge{width:50px;height:34px;display:block}
+.gauge .track{fill:none;stroke:#E3EBED;stroke-width:6;stroke-linecap:round}
+.gauge .sweep{fill:none;stroke-width:6;stroke-linecap:round}
+.gauge .needle{stroke-width:2;stroke-linecap:round}
+.gauge .hub{stroke:#fff;stroke-width:1.5}
+.gauge.mini{width:38px;height:26px}
+
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);
+  padding:16px;margin-bottom:11px;box-shadow:var(--shadow)}
+.panel h3{margin:0 0 3px;font-size:17px;font-weight:650;letter-spacing:-.015em}
+.panel .sub{font-family:var(--mono);font-size:11px;color:var(--muted);margin-bottom:12px}
+.btnrow{display:flex;flex-wrap:wrap;gap:8px;margin-top:13px}
+.smsbox{font-family:var(--mono);font-size:12.5px;line-height:1.55;background:var(--accent-soft);
+  border:1px solid #BFE7EA;color:#10424A;border-radius:var(--r-sm);padding:12px;
+  white-space:pre-wrap;margin-top:11px}
+
+/* installation sub-card inside detail */
+.inst{border:1px solid var(--line);border-radius:var(--r-sm);padding:11px 12px;margin-top:9px;
+  background:var(--surface-2);display:grid;grid-template-columns:38px minmax(0,1fr);gap:11px;align-items:start}
+.inst>*{min-width:0}
+.inst.late{border-left:3px solid var(--red)}
+.inst.soon{border-left:3px solid var(--amber)}
+.inst.fine{border-left:3px solid var(--green)}
+.inst .it{font-weight:650;font-size:14px;letter-spacing:-.01em;overflow-wrap:anywhere}
+.inst .im{font-family:var(--mono);font-size:10.5px;color:var(--muted);margin-top:2px;overflow-wrap:anywhere}
+.inst .ib{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px;align-items:center}
+.mini-hist{list-style:none;margin:8px 0 0;padding:8px 0 0;border-top:1px dashed var(--line)}
+.mini-hist li{display:grid;grid-template-columns:74px minmax(0,1fr);gap:8px;font-size:12.5px;padding:3px 0}
+.mini-hist li>*{min-width:0;overflow-wrap:anywhere}
+.mini-hist time{font-family:var(--mono);font-size:11px;color:var(--muted)}
+.mini-hist b{font-weight:600;color:var(--brand)}
+.mini-hist .nores{opacity:.62}
+.note{font-size:13px;color:var(--muted);margin:9px 0 0;line-height:1.5}
+.divider{font-family:var(--mono);font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;
+  color:var(--muted);margin:16px 0 0;padding-top:13px;border-top:1px solid var(--line);
+  display:flex;align-items:center;gap:9px}
+.divider .sp{margin-left:auto}
+
+.field{margin-bottom:12px}
+label{display:block;font-family:var(--mono);font-size:10.5px;letter-spacing:.12em;
+  text-transform:uppercase;color:var(--muted);margin-bottom:5px}
+input,select,textarea{width:100%;font-family:var(--sans);font-size:15px;color:var(--ink);
+  background:var(--surface-2);border:1px solid var(--line);border-radius:var(--r-sm);
+  padding:10px 11px;transition:border-color .14s ease,background .14s ease}
+input:focus,select:focus,textarea:focus{outline:none;border-color:var(--accent);background:#fff;
+  box-shadow:0 0 0 3px rgba(0,163,173,.15)}
+textarea{resize:vertical;min-height:62px}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.two>*{min-width:0}
+.subhead{font-family:var(--mono);font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;
+  color:var(--muted);margin:16px 0 10px;padding-top:13px;border-top:1px solid var(--line)}
+
+dialog{border:0;border-radius:var(--r);padding:0;background:var(--bg);color:var(--ink);
+  width:min(480px,calc(100vw - 26px));box-shadow:0 24px 60px rgba(14,28,32,.3)}
+dialog::backdrop{background:rgba(14,28,32,.5)}
+.dlg-h{padding:16px 18px 0}
+.dlg-h h2{margin:0;font-size:18px;font-weight:650;letter-spacing:-.015em}
+.dlg-h .dsub{font-family:var(--mono);font-size:11px;color:var(--muted);margin-top:3px}
+.dlg-b{padding:14px 18px 16px;max-height:66vh;overflow:auto}
+.dlg-f{display:flex;gap:8px;justify-content:flex-end;padding:0 18px 18px}
+
+@media print{
+  body{background:#fff;padding:0;font-size:12px}
+  nav,.banner,.btnrow,button,.gauge,.stats,#tab-klijenti,#tab-instalacije,#tab-podaci,#detalj{display:none !important}
+  header{position:static;background:#fff;color:#000;box-shadow:none;border-bottom:2px solid #000}
+  .logo{display:none} .htext .mark{color:#555}
+  li.row{border:0;border-bottom:1px solid #bbb;border-radius:0;background:none !important;
+    box-shadow:none;grid-template-columns:1fr auto;page-break-inside:avoid;padding:7px 0}
+  .chip,.pill{border:0;background:none !important;padding:0 4px 0 0}
+}
+
+@media (min-width:820px){
+  nav{padding:14px 16px 4px}
+  nav button{flex:0 0 auto;padding:9px 16px;font-size:13px}
+  nav button .n{font-size:13px}
+  .split{display:grid;grid-template-columns:minmax(0,1fr) 390px;gap:20px;align-items:start}
+  .split>*{min-width:0}
+  #detalj{position:sticky;top:88px;max-height:calc(100vh - 108px);overflow:auto}
+  .stats{max-width:560px}
+}
+@media (prefers-reduced-motion:reduce){
+  *{transition:none !important} li.row:hover{transform:none}
+}
+
+/* ---- login + korisnička traka ---- */
+[hidden]{display:none !important}
+.login-wrap{min-height:100vh;display:grid;place-items:center;padding:20px 16px}
+.login-card{width:min(400px,100%);background:var(--surface);border:1px solid var(--line);
+  border-radius:var(--r);padding:26px 22px;box-shadow:var(--shadow-lift)}
+.login-card .logo{margin-bottom:14px}
+.login-card h1{margin:0 0 3px;font-size:21px;font-weight:650;letter-spacing:-.02em}
+.login-card .sub{font-family:var(--mono);font-size:11px;color:var(--muted);margin-bottom:18px}
+.login-err{background:var(--red-bg);border:1px solid var(--red-line);color:var(--red);
+  border-radius:var(--r-sm);padding:9px 11px;font-size:13.5px;margin-bottom:12px}
+.login-card button.act{width:100%;padding:12px 16px}
+.huser{display:flex;align-items:center;gap:8px;margin-left:10px}
+.huser .who{font-family:var(--mono);font-size:11px;color:#BFE3E7;max-width:170px;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.huser button{background:rgba(255,255,255,.12);color:#fff;border:0;border-radius:var(--r-sm);
+  padding:6px 10px;font-size:12px;cursor:pointer;font-family:var(--sans)}
+.huser button:hover{background:rgba(255,255,255,.22)}
+@media (max-width:560px){ .hcount{display:none} .huser .who{display:none} }
+
+/* ---- forma sa više sistema ---- */
+.sis{border:1px solid var(--line);border-left:3px solid var(--accent);border-radius:var(--r-sm);
+  background:var(--surface-2);padding:11px 12px 2px;margin-bottom:10px}
+.sis-h{display:flex;align-items:center;justify-content:space-between;margin-bottom:9px}
+.sis-n{font-family:var(--mono);font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--brand);font-weight:600}
+.sis-add{width:100%;margin-bottom:4px}
+.urow{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:10px;align-items:center;
+  padding:9px 0;border-bottom:1px solid var(--line)}
+.urow:last-child{border-bottom:0}
+.urow .uime{font-weight:600;font-size:14.5px;overflow-wrap:anywhere}
+.urow .umail{font-family:var(--mono);font-size:11px;color:var(--muted);overflow-wrap:anywhere}
+.urow select{width:auto;padding:7px 9px;font-size:13.5px}
+dialog.wide{width:min(560px,calc(100vw - 26px))}
+@media print{ .huser,#login{display:none !important} }
+</style>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="config.js"></script>
+</head>
+<body>
+
+<!-- ===== login ===== -->
+<div id="login" class="login-wrap" hidden>
+  <form class="login-card" id="login-forma" autocomplete="on">
+    <span class="logo">
+      <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+        <path d="M12 2.5c.7 3.4 3 4.6 4.4 6.6a7.5 7.5 0 1 1-12.2 6c0-3.2 1.8-5 3.2-6.6.5 1 1.2 1.7 2 2 .3-3.4 1.3-6 2.6-8Z" fill="#fff" opacity=".95"/>
+        <path d="M12 14c.6 1 1.6 1.6 1.6 2.9a1.9 1.9 0 1 1-3.8 0c0-1.3 1.6-1.6 2.2-2.9Z" fill="#0E3B43"/>
+      </svg>
+    </span>
+    <h1>Servisna knjiga</h1>
+    <div class="sub">Vatrosprem Inovacije · interna aplikacija</div>
+    <div class="login-err" id="login-err" role="alert" hidden></div>
+    <div class="field"><label for="l-email">E-mail</label>
+      <input id="l-email" type="email" inputmode="email" autocomplete="username" required></div>
+    <div class="field"><label for="l-lozinka">Lozinka</label>
+      <input id="l-lozinka" type="password" autocomplete="current-password" required></div>
+    <button class="act accent" id="btn-login" type="submit">Prijavi se</button>
+  </form>
+</div>
+
+<div id="ucitavanje" class="login-wrap"><div class="note">Učitavanje…</div></div>
+
+<!-- ===== aplikacija ===== -->
+<div id="app" hidden>
+
+<header>
+  <div class="wrap hbar">
+    <span class="logo">
+      <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+        <path d="M12 2.5c.7 3.4 3 4.6 4.4 6.6a7.5 7.5 0 1 1-12.2 6c0-3.2 1.8-5 3.2-6.6.5 1 1.2 1.7 2 2 .3-3.4 1.3-6 2.6-8Z" fill="#fff" opacity=".95"/>
+        <path d="M12 14c.6 1 1.6 1.6 1.6 2.9a1.9 1.9 0 1 1-3.8 0c0-1.3 1.6-1.6 2.2-2.9Z" fill="#0E3B43"/>
+      </svg>
+    </span>
+    <span class="htext"><span class="mark">Servisna knjiga</span><h1 id="title">Za poziv</h1></span>
+    <span class="hcount" id="hcount"></span>
+    <span class="huser"><span class="who" id="who"></span><button id="btn-odjava" type="button">Odjava</button></span>
+  </div>
+</header>
+
+<nav role="tablist">
+  <button role="tab" aria-selected="true" data-tab="poziv"><span class="n" id="n-poziv">0</span>Za poziv</button>
+  <button role="tab" aria-selected="false" data-tab="klijenti"><span class="n" id="n-klijenti">0</span>Klijenti</button>
+  <button role="tab" aria-selected="false" data-tab="instalacije"><span class="n" id="n-inst">0</span>Instalacije</button>
+  <button role="tab" aria-selected="false" data-tab="korisnici" id="nav-korisnici" hidden><span class="n">☺</span>Korisnici</button>
+  <button role="tab" aria-selected="false" data-tab="podaci"><span class="n">↧</span>Podaci</button>
+</nav>
+
+<main class="wrap">
+
+  <section id="tab-poziv" class="sect">
+    <div class="stats">
+      <div class="stat r"><b id="s-late">0</b><span>instalacija kasni</span></div>
+      <div class="stat a"><b id="s-soon">0</b><span>u 30 dana</span></div>
+      <div class="stat g"><b id="s-fine">0</b><span>u roku</span></div>
+    </div>
+    <div class="split">
+      <div>
+        <p class="eyebrow">Objekti kojima nešto ističe</p>
+        <ul class="rows" id="lista-poziv"></ul>
+      </div>
+      <div id="detalj"></div>
+    </div>
+  </section>
+
+  <section id="tab-klijenti" class="sect" hidden>
+    <p class="eyebrow">Svi objekti</p>
+    <div class="btnrow" style="margin:0 0 13px">
+      <button class="act accent" id="btn-nov-klijent">Dodaj klijenta</button>
+    </div>
+    <div class="split">
+      <ul class="rows" id="lista-klijenti"></ul>
+      <div id="detalj2"></div>
+    </div>
+  </section>
+
+  <section id="tab-instalacije" class="sect" hidden>
+    <p class="eyebrow">Svi sistemi, sortirano po hitnosti</p>
+    <div class="btnrow" style="margin:0 0 13px">
+      <button class="act accent" id="btn-nov-servis">Upiši servis</button>
+      <button class="act ghost" id="btn-nova-inst-global">Dodaj instalaciju</button>
+    </div>
+    <ul class="rows" id="lista-inst"></ul>
+  </section>
+
+  <section id="tab-korisnici" class="sect" hidden>
+    <p class="eyebrow">Zaposleni sa pristupom</p>
+    <div class="panel">
+      <h3>Korisnici</h3>
+      <div class="sub">Admin vidi sve naloge i menja uloge</div>
+      <div id="lista-korisnika"></div>
+      <p class="note">Nove naloge za sada pravi admin u Supabase dashboardu (Authentication → Users).</p>
+    </div>
+  </section>
+
+  <section id="tab-podaci" class="sect" hidden>
+    <p class="eyebrow">Izvoz</p>
+    <div class="panel">
+      <h3>Popisi</h3>
+      <div class="sub">Podaci se čuvaju u bazi, dostupni sa svakog uređaja</div>
+      <div class="btnrow">
+        <button class="act" id="btn-csv">Popis instalacija (CSV)</button>
+        <button class="act ghost" id="btn-stampa">Štampaj popis</button>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<!-- klijent (+ više sistema odjednom) -->
+<dialog id="dlg-klijent" class="wide">
+  <div class="dlg-h"><h2 id="dlg-klijent-h">Novi klijent</h2></div>
+  <div class="dlg-b">
+    <input type="hidden" id="k-id">
+    <div class="field"><label for="k-naziv">Naziv objekta</label>
+      <input id="k-naziv" placeholder="npr. Hotel Metropol"></div>
+    <div class="field"><label for="k-adresa">Adresa</label>
+      <input id="k-adresa" placeholder="Bulevar kralja Aleksandra 69"></div>
+    <div class="two">
+      <div class="field"><label for="k-osoba">Kontakt osoba</label>
+        <input id="k-osoba" placeholder="Marko Petrović"></div>
+      <div class="field"><label for="k-tel">Telefon</label>
+        <input id="k-tel" type="tel" inputmode="tel" placeholder="0641234567"></div>
+    </div>
+    <div class="field"><label for="k-email">E-mail</label>
+      <input id="k-email" type="email" inputmode="email" placeholder="kontakt@firma.rs"></div>
+
+    <p class="subhead" id="sis-naslov">Sistemi — dodaj sve odjednom</p>
+    <div id="sis-lista"></div>
+    <button type="button" class="act ghost sis-add" id="btn-dodaj-sis">+ Dodaj još jedan sistem</button>
+  </div>
+  <div class="dlg-f">
+    <button class="act ghost" data-close="dlg-klijent">Odustani</button>
+    <button class="act accent" id="btn-sacuvaj-klijent">Sačuvaj</button>
+  </div>
+</dialog>
+
+<!-- instalacija (izmena / pojedinačno dodavanje) -->
+<dialog id="dlg-inst">
+  <div class="dlg-h"><h2 id="dlg-inst-h">Nova instalacija</h2><div class="dsub" id="dlg-inst-sub"></div></div>
+  <div class="dlg-b">
+    <input type="hidden" id="i-id">
+    <div class="field"><label for="i-klijent">Objekat</label><select id="i-klijent"></select></div>
+    <div class="field"><label for="i-tip">Vrsta sistema</label><select id="i-tip"></select></div>
+    <div class="two">
+      <div class="field"><label for="i-oznaka">Oznaka ili mesto</label>
+        <input id="i-oznaka" placeholder="Kuhinja, sprat 2, garaža..."></div>
+      <div class="field"><label for="i-interval">Interval (meseci)</label>
+        <input id="i-interval" type="number" min="1" max="120" value="6"></div>
+    </div>
+  </div>
+  <div class="dlg-f">
+    <button class="act ghost" id="btn-obrisi-inst" hidden>Obriši</button>
+    <button class="act ghost" data-close="dlg-inst">Odustani</button>
+    <button class="act accent" id="btn-sacuvaj-inst">Sačuvaj</button>
+  </div>
+</dialog>
+
+<!-- servis -->
+<dialog id="dlg-servis">
+  <div class="dlg-h"><h2>Upiši servis</h2><div class="dsub" id="dlg-servis-sub"></div></div>
+  <div class="dlg-b">
+    <div class="field"><label for="s-inst">Instalacija</label><select id="s-inst"></select></div>
+    <div class="two">
+      <div class="field"><label for="s-datum">Datum</label><input id="s-datum" type="date"></div>
+      <div class="field"><label for="s-vrsta">Vrsta rada</label><select id="s-vrsta"></select></div>
+    </div>
+    <div class="field"><label for="s-opis">Šta je urađeno</label>
+      <textarea id="s-opis" placeholder="24 aparata S-9 pregledano, 2 dopunjena, zamenjen manometar"></textarea></div>
+    <p class="note" id="s-napomena"></p>
+  </div>
+  <div class="dlg-f">
+    <button class="act ghost" data-close="dlg-servis">Odustani</button>
+    <button class="act accent" id="btn-sacuvaj-servis">Sačuvaj</button>
+  </div>
+</dialog>
+
+</div><!-- /app -->
+
+<script>
+(function(){
+"use strict";
+
+/* ---------- šifarnici ---------- */
+var TIPOVI = [
+  ["PP aparati",6],
+  ["Hidrantska mreža",6],
+  ["Sprinkler sistem",12],
+  ["Sistem za dojavu požara",6],
+  ["Stabilni sistem za gašenje",12],
+  ["Panik rasveta",6],
+  ["Protivpanična vrata",12],
+  ["Ostalo",12]
+];
+/* vrsta rada -> da li resetuje rok */
+var VRSTE = [
+  ["Redovna kontrola",true],
+  ["Prvo kontrolisanje",true],
+  ["Ugradnja / instalacija",true],
+  ["Kontrolno ispitivanje",true],
+  ["Punjenje / dopuna",true],
+  ["Popravka",false],
+  ["Izlazak bez rada",false]
+];
+function resetuje(v){
+  for(var i=0;i<VRSTE.length;i++) if(VRSTE[i][0]===v) return VRSTE[i][1];
+  return true;
+}
+function podrazumevaniInterval(tip){
+  for(var i=0;i<TIPOVI.length;i++) if(TIPOVI[i][0]===tip) return TIPOVI[i][1];
+  return 6;
+}
+
+
+/* ---------- podaci (Supabase) ---------- */
+var cfg=window.APP_CONFIG||{};
+var sb=window.supabase.createClient(cfg.SUPABASE_URL,cfg.SUPABASE_ANON_KEY);
+var db={klijenti:[],instalacije:[],servisi:[]}, izabran=null, profil=null, trenutniKorisnik=null;
+
+async function sviRedovi(tabela){
+  var out=[],od=0,korak=1000;
+  for(;;){
+    var r=await sb.from(tabela).select("*").order("id").range(od,od+korak-1);
+    if(r.error) throw r.error;
+    out=out.concat(r.data);
+    if(r.data.length<korak) break;
+    od+=korak;
+  }
+  return out;
+}
+async function ucitaj(){
+  var r=await Promise.all([sviRedovi("objekti"),sviRedovi("instalacije"),sviRedovi("servisi")]);
+  db.klijenti=r[0].map(function(o){ return {id:o.id,naziv:o.naziv,adresa:o.adresa||"",
+    osoba:o.kontakt_osoba||"",tel:o.telefon||"",email:o.email||""}; });
+  db.instalacije=r[1].map(function(i){ return {id:i.id,kid:i.objekat_id,tip:i.tip,
+    oznaka:i.oznaka||"",interval:i.interval_meseci}; });
+  db.servisi=r[2].map(function(s){ return {id:s.id,iid:s.instalacija_id,datum:s.datum,
+    vrsta:s.vrsta,opis:s.opis||""}; });
+  if(izabran&&!klijent(izabran)) izabran=null;
+}
+/* izvrši upis, pa osveži podatke; vraća true ako je uspelo */
+async function radi(dugme,fn){
+  dugme.disabled=true;
+  try{ await fn(); await ucitaj(); crtaj(); return true; }
+  catch(e){ alert("Greška: "+(e&&e.message?e.message:e)); return false; }
+  finally{ dugme.disabled=false; }
+}
+
+/* ---------- datumi ---------- */
+var DAN=86400000;
+function danas(){ var d=new Date(); d.setHours(0,0,0,0); return d; }
+function parse(s){ var p=String(s).split("-"); return new Date(+p[0],+p[1]-1,+p[2]); }
+function iso(d){ return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0"); }
+function plusMeseci(d,m){ var r=new Date(d.getTime()),dan=r.getDate(); r.setMonth(r.getMonth()+m);
+  if(r.getDate()<dan) r.setDate(0); return r; }
+function srpskiD(d){ return String(d.getDate()).padStart(2,"0")+"."+String(d.getMonth()+1).padStart(2,"0")+"."+d.getFullYear()+"."; }
+function srpski(s){ return srpskiD(parse(s)); }
+function danaDo(d){ return Math.round((d.getTime()-danas().getTime())/DAN); }
+function rec(n,j,dv,mn){ var a=Math.abs(n)%100,b=a%10;
+  if(a>10&&a<20) return mn; if(b===1) return j; if(b>=2&&b<=4) return dv; return mn; }
+
+/* ---------- upiti ---------- */
+function instZa(kid){ return db.instalacije.filter(function(i){ return i.kid===kid; }); }
+function klijent(kid){ return db.klijenti.filter(function(k){ return k.id===kid; })[0]; }
+function instalacija(iid){ return db.instalacije.filter(function(i){ return i.id===iid; })[0]; }
+function serviseZa(iid){
+  return db.servisi.filter(function(s){ return s.iid===iid; })
+    .sort(function(a,b){ return a.datum<b.datum?1:-1; });
+}
+function poslednjiReset(iid){
+  var l=serviseZa(iid).filter(function(s){ return resetuje(s.vrsta); });
+  return l.length?l[0]:null;
+}
+function stanjeInst(inst){
+  var p=poslednjiReset(inst.id), interval=inst.interval||6;
+  if(!p) return {status:"late",dana:null,tekst:"Nema kontrole",pod:"nikad zabeleženo",
+    udeo:1.1,poslednji:null,rok:null};
+  var od=parse(p.datum), rok=plusMeseci(od,interval), dana=danaDo(rok);
+  var ukupno=Math.max(1,Math.round((rok.getTime()-od.getTime())/DAN));
+  var proteklo=Math.round((danas().getTime()-od.getTime())/DAN);
+  var udeo=Math.max(0,Math.min(1.15,proteklo/ukupno));
+  var status=dana<0?"late":(dana<=30?"soon":"fine"), tekst, pod;
+  if(dana<0){ tekst="Kasni "+Math.abs(dana)+" "+rec(Math.abs(dana),"dan","dana","dana"); pod="rok je bio "+srpskiD(rok); }
+  else if(dana===0){ tekst="Rok je danas"; pod="poslednja "+srpski(p.datum); }
+  else { tekst="Za "+dana+" "+rec(dana,"dan","dana","dana"); pod="poslednja "+srpski(p.datum); }
+  return {status:status,dana:dana,tekst:tekst,pod:pod,udeo:udeo,poslednji:p,rok:rok};
+}
+function stanjeKlijenta(k){
+  var li=instZa(k.id);
+  if(!li.length) return {status:"soon",dana:99999,tekst:"Nema instalacija",udeo:0,
+    hitne:[],sve:[],prazan:true};
+  var sa=li.map(function(i){ return {inst:i,st:stanjeInst(i)}; })
+    .sort(function(a,b){ return (a.st.dana===null?-99999:a.st.dana)-(b.st.dana===null?-99999:b.st.dana); });
+  var naj=sa[0];
+  return {status:naj.st.status,dana:naj.st.dana,tekst:naj.st.tekst,udeo:naj.st.udeo,
+    hitne:sa.filter(function(x){ return x.st.dana===null||x.st.dana<=30; }),sve:sa,prazan:false};
+}
+function sviKlijentiSort(){
+  return db.klijenti.slice().sort(function(a,b){
+    var x=stanjeKlijenta(a).dana, y=stanjeKlijenta(b).dana;
+    return (x===null?-99999:x)-(y===null?-99999:y);
+  });
+}
+function sveInstSort(){
+  return db.instalacije.map(function(i){ return {inst:i,st:stanjeInst(i)}; })
+    .sort(function(a,b){ return (a.st.dana===null?-99999:a.st.dana)-(b.st.dana===null?-99999:b.st.dana); });
+}
+
+/* ---------- gauge ---------- */
+function tacka(t,r,cx,cy){ var a=(-120+Math.max(0,Math.min(1,t))*240)*Math.PI/180;
+  return [cx+r*Math.sin(a), cy-r*Math.cos(a)]; }
+function luk(od,doo,r,cx,cy){
+  var a=tacka(od,r,cx,cy), b=tacka(doo,r,cx,cy), v=(doo-od)>0.5?1:0;
+  return "M"+a[0].toFixed(2)+" "+a[1].toFixed(2)+" A"+r+" "+r+" 0 "+v+" 1 "+b[0].toFixed(2)+" "+b[1].toFixed(2);
+}
+function gauge(udeo,mini){
+  var boja=udeo>=1?"#DC3B2B":(udeo>=0.84?"#CF7D00":"#0B9A6D");
+  var t=Math.max(0.02,Math.min(1,udeo));
+  var vrh=tacka(t,14,25,27);
+  return '<svg class="gauge'+(mini?" mini":"")+'" viewBox="0 0 50 34" aria-hidden="true">'+
+    '<path class="track" d="'+luk(0,1,17,25,27)+'"/>'+
+    '<path class="sweep" style="stroke:'+boja+'" d="'+luk(0,t,17,25,27)+'"/>'+
+    '<line class="needle" style="stroke:'+boja+'" x1="25" y1="27" x2="'+vrh[0].toFixed(2)+'" y2="'+vrh[1].toFixed(2)+'"/>'+
+    '<circle class="hub" cx="25" cy="27" r="2.6" style="fill:'+boja+'"/></svg>';
+}
+
+function esc(s){ return String(s==null?"":s).replace(/[&<>"']/g,function(c){
+  return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]; }); }
+function el(id){ return document.getElementById(id); }
+function opcije(niz,izabrano){
+  return niz.map(function(x){
+    var v=Array.isArray(x)?x[0]:x;
+    return '<option value="'+esc(v)+'"'+(v===izabrano?" selected":"")+">"+esc(v)+"</option>";
+  }).join("");
+}
+function imeInst(i){ return i.tip+(i.oznaka?" — "+i.oznaka:""); }
+
+/* ---------- redovi ---------- */
+function redKlijent(k){
+  var s=stanjeKlijenta(k);
+  var pills=s.sve.slice(0,4).map(function(x){
+    return '<span class="pill '+x.st.status+'">'+esc(x.inst.tip)+
+      (x.inst.oznaka?" · "+esc(x.inst.oznaka):"")+"</span>";
+  }).join("");
+  if(s.sve.length>4) pills+='<span class="pill">+'+(s.sve.length-4)+"</span>";
+  return '<li class="row '+s.status+(izabran===k.id?" sel":"")+'" data-id="'+k.id+'" tabindex="0" role="button">'+
+    gauge(s.udeo)+
+    '<div><div class="name">'+esc(k.naziv)+'</div>'+
+    '<div class="meta">'+esc(k.adresa||"bez adrese")+' · '+s.sve.length+' '+
+      rec(s.sve.length,"instalacija","instalacije","instalacija")+'</div>'+
+    (pills?'<div class="pills">'+pills+"</div>":"")+"</div>"+
+    '<div class="state"><span class="chip '+s.status+'">'+esc(s.tekst)+'</span></div></li>';
+}
+function redInst(x){
+  var k=klijent(x.inst.kid);
+  return '<li class="row '+x.st.status+'" data-inst="'+x.inst.id+'" tabindex="0" role="button">'+
+    gauge(x.st.udeo)+
+    '<div><div class="name">'+esc(imeInst(x.inst))+'</div>'+
+    '<div class="meta">'+esc(k?k.naziv:"—")+' · na '+(x.inst.interval||6)+' mes.</div></div>'+
+    '<div class="state"><span class="chip '+x.st.status+'">'+esc(x.st.tekst)+
+      '</span><small>'+esc(x.st.pod)+'</small></div></li>';
+}
+
+/* ---------- poruka ---------- */
+function poruka(k){
+  var s=stanjeKlijenta(k);
+  var ime=k.osoba?k.osoba.split(" ")[0]:"";
+  var uvod=(ime?"Poštovani "+ime+",":"Poštovani,")+" javljamo se iz servisa protivpožarne opreme.";
+  if(s.prazan||!s.hitne.length) return uvod+" Vreme je za redovnu kontrolu. Kada Vam odgovara da dođemo?";
+  var spisak=s.hitne.map(function(x){ return imeInst(x.inst); }).join(", ");
+  return uvod+" Ističe rok za redovnu kontrolu: "+spisak+". Kada Vam odgovara da dođemo?";
+}
+
+/* ---------- detalj ---------- */
+function detaljHTML(k){
+  var s=stanjeKlijenta(k), txt=poruka(k);
+  var telefon=k.tel?String(k.tel):"";
+  var html='<div class="panel" data-panel="1">'+
+    '<h3>'+esc(k.naziv)+'</h3>'+
+    '<div class="sub">'+esc(k.adresa||"bez adrese")+(k.osoba?" · "+esc(k.osoba):"")+(telefon?" · "+esc(telefon):"")+(k.email?" · "+esc(k.email):"")+'</div>'+
+    '<div class="smsbox">'+esc(txt)+'</div>'+
+    '<div class="btnrow">'+
+      (telefon?'<a class="act accent sm" href="tel:'+esc(telefon)+'">Pozovi</a>':"")+
+      (telefon?'<a class="act ghost sm" href="sms:'+esc(telefon)+'?&body='+encodeURIComponent(txt)+'">SMS</a>':"")+
+      '<button class="act ghost sm" data-kopiraj="'+k.id+'">Kopiraj tekst</button>'+
+      '<button class="act ghost sm" data-uredi-k="'+k.id+'">Izmeni klijenta</button>'+
+    '</div>'+
+    '<div class="divider">Instalacije<span class="sp"></span>'+
+      '<button class="act ghost sm" data-nova-inst="'+k.id+'">Dodaj</button></div>';
+
+  if(!s.sve.length){
+    html+='<p class="note">Nijedna instalacija nije upisana. Dodaj sprinkler, PP aparate, hidrante — svaki sa svojim rokom.</p>';
+  } else {
+    s.sve.forEach(function(x){
+      var ist=serviseZa(x.inst.id).slice(0,3);
+      html+='<div class="inst '+x.st.status+'">'+gauge(x.st.udeo,true)+
+        '<div><div class="it">'+esc(imeInst(x.inst))+'</div>'+
+        '<div class="im">na '+(x.inst.interval||6)+' mes. · '+esc(x.st.pod)+'</div>'+
+        '<div class="ib"><span class="chip '+x.st.status+'">'+esc(x.st.tekst)+'</span>'+
+          '<button class="act ghost sm" data-servis-za="'+x.inst.id+'">Upiši servis</button>'+
+          '<button class="act ghost sm" data-uredi-i="'+x.inst.id+'">Izmeni</button></div>'+
+        (ist.length?'<ul class="mini-hist">'+ist.map(function(sv){
+          return '<li'+(resetuje(sv.vrsta)?"":' class="nores"')+'><time>'+srpski(sv.datum)+
+            '</time><span><b>'+esc(sv.vrsta||"Redovna kontrola")+'</b>'+
+            (sv.opis?"<br>"+esc(sv.opis):"")+'</span></li>';
+        }).join("")+"</ul>":'<p class="note">Nema upisanih radova.</p>')+
+        "</div></div>";
+    });
+  }
+  return html+"</div>";
+}
+function detalj(){
+  var box1=el("detalj"), box2=el("detalj2");
+  var k=izabran?klijent(izabran):null;
+  var html=k?detaljHTML(k):"";
+  box1.innerHTML=html; box2.innerHTML=html;
+}
+
+/* ---------- render ---------- */
+function crtaj(){
+  var late=0,soon=0,fine=0;
+  db.instalacije.forEach(function(i){
+    var st=stanjeInst(i).status;
+    if(st==="late")late++; else if(st==="soon")soon++; else fine++;
+  });
+  el("s-late").textContent=late; el("s-soon").textContent=soon; el("s-fine").textContent=fine;
+  el("n-klijenti").textContent=db.klijenti.length;
+  el("n-inst").textContent=db.instalacije.length;
+  el("hcount").textContent=db.klijenti.length
+    ? db.klijenti.length+" obj. · "+db.instalacije.length+" inst." : "prazno";
+
+  var svi=sviKlijentiSort();
+  var hitni=svi.filter(function(k){ return stanjeKlijenta(k).hitne.length>0; });
+  el("n-poziv").textContent=hitni.length;
+
+  var lp=el("lista-poziv");
+  if(!db.klijenti.length)
+    lp.innerHTML='<li class="empty"><b>Knjiga je prazna</b>Dodaj prvi objekat, pa mu upiši šta si ugradio ili servisirao.</li>';
+  else if(!hitni.length)
+    lp.innerHTML='<li class="empty"><b>Niko ne čeka</b>Sve instalacije su u roku. Sledeći poziv kreće za više od 30 dana.</li>';
+  else lp.innerHTML=hitni.map(redKlijent).join("");
+
+  el("lista-klijenti").innerHTML=db.klijenti.length?svi.map(redKlijent).join("")
+    :'<li class="empty"><b>Nema klijenata</b>Počni od objekata koje najčešće obilaziš.</li>';
+
+  el("lista-inst").innerHTML=db.instalacije.length?sveInstSort().map(redInst).join("")
+    :'<li class="empty"><b>Nema instalacija</b>Instalacija je jedan sistem kod jednog klijenta — sprinkler, PP aparati, hidranti. Svaki ima svoj rok.</li>';
+
+  detalj();
+}
+
+
+/* ---------- tabovi ---------- */
+var TABOVI=["poziv","klijenti","instalacije","korisnici","podaci"];
+var naslovi={poziv:"Za poziv",klijenti:"Klijenti",instalacije:"Instalacije",korisnici:"Korisnici",podaci:"Podaci"};
+function prikaziTab(t,naslov){
+  Array.prototype.forEach.call(document.querySelectorAll("nav button"),function(x){
+    x.setAttribute("aria-selected",x.dataset.tab===t?"true":"false"); });
+  TABOVI.forEach(function(z){ el("tab-"+z).hidden=(z!==t); });
+  el("title").textContent=naslov||naslovi[t];
+  if(t==="korisnici") crtajKorisnike();
+}
+Array.prototype.forEach.call(document.querySelectorAll("nav button"),function(b){
+  b.onclick=function(){ prikaziTab(b.dataset.tab); };
+});
+
+/* ---------- klikovi ---------- */
+document.addEventListener("click",function(e){
+  var t=e.target;
+  if(!t.closest) return;
+
+  var kop=t.closest("[data-kopiraj]");
+  if(kop){ e.stopPropagation();
+    var kk=klijent(kop.dataset.kopiraj); if(!kk) return;
+    var tx=poruka(kk);
+    var ok=function(){ kop.textContent="Kopirano"; setTimeout(function(){ kop.textContent="Kopiraj tekst"; },1400); };
+    if(navigator.clipboard&&navigator.clipboard.writeText) navigator.clipboard.writeText(tx).then(ok,function(){});
+    else { var ta=document.createElement("textarea"); ta.value=tx; document.body.appendChild(ta);
+      ta.select(); try{ document.execCommand("copy"); }catch(err){} document.body.removeChild(ta); ok(); }
+    return; }
+
+  var uk=t.closest("[data-uredi-k]");
+  if(uk){ e.stopPropagation(); otvoriKlijenta(klijent(uk.dataset.urediK),false); return; }
+
+  var ni=t.closest("[data-nova-inst]");
+  if(ni){ e.stopPropagation(); otvoriKlijenta(klijent(ni.dataset.novaInst),true); return; }
+
+  var ui=t.closest("[data-uredi-i]");
+  if(ui){ e.stopPropagation(); otvoriInst(instalacija(ui.dataset.urediI)); return; }
+
+  var sz=t.closest("[data-servis-za]");
+  if(sz){ e.stopPropagation(); otvoriServis(sz.dataset.servisZa); return; }
+
+  if(t.closest("[data-panel]")) return;
+
+  var ri=t.closest("li.row[data-inst]");
+  if(ri){ var inst=instalacija(ri.dataset.inst); if(inst){ izabran=inst.kid;
+    prikaziTab("klijenti"); crtaj();
+    var d2=el("detalj2"); if(d2) d2.scrollIntoView({behavior:"smooth",block:"nearest"}); }
+    return; }
+
+  var r=t.closest("li.row[data-id]");
+  if(r){ izabran=(izabran===r.dataset.id)?null:r.dataset.id; crtaj();
+    if(window.innerWidth<820&&izabran){
+      var vis=el("tab-poziv").hidden?el("detalj2"):el("detalj");
+      if(vis) vis.scrollIntoView({behavior:"smooth",block:"nearest"}); } }
+});
+document.addEventListener("keydown",function(e){
+  if((e.key==="Enter"||e.key===" ")&&e.target.classList&&e.target.classList.contains("row")){
+    e.preventDefault(); e.target.click(); }
+});
+Array.prototype.forEach.call(document.querySelectorAll("[data-close]"),function(b){
+  b.onclick=function(){ el(b.dataset.close).close(); };
+});
+
+/* ---------- dijalog: klijent + više sistema ---------- */
+function redSistema(){
+  var d=document.createElement("div"); d.className="sis";
+  d.innerHTML=
+    '<div class="sis-h"><span class="sis-n"></span>'+
+      '<button type="button" class="act ghost sm" data-ukloni-sis>Ukloni</button></div>'+
+    '<div class="field"><label>Šta je ugrađeno / šta servisiraš</label>'+
+      '<select class="s-tip">'+opcije(TIPOVI,"PP aparati")+'</select></div>'+
+    '<div class="two">'+
+      '<div class="field"><label>Oznaka ili mesto</label><input class="s-oznaka" placeholder="Podzemna garaža"></div>'+
+      '<div class="field"><label>Interval (meseci)</label><input class="s-interval" type="number" min="1" max="120" value="6"></div>'+
+    '</div>'+
+    '<div class="two">'+
+      '<div class="field"><label>Datum poslednjeg rada</label><input class="s-datum" type="date" value="'+iso(danas())+'"></div>'+
+      '<div class="field"><label>Vrsta rada</label><select class="s-vrsta">'+opcije(VRSTE,"Ugradnja / instalacija")+'</select></div>'+
+    '</div>'+
+    '<div class="field"><label>Šta je urađeno</label><input class="s-opis" placeholder="Ugradnja 24 sprinkler mlaznice"></div>';
+  d.querySelector(".s-tip").onchange=function(){ d.querySelector(".s-interval").value=podrazumevaniInterval(this.value); };
+  return d;
+}
+function numerisiSisteme(){
+  var redovi=el("sis-lista").children;
+  Array.prototype.forEach.call(redovi,function(r,i){
+    r.querySelector(".sis-n").textContent="Sistem "+(i+1); });
+}
+function dodajSistem(){
+  var r=redSistema(); el("sis-lista").appendChild(r); numerisiSisteme();
+  r.scrollIntoView({behavior:"smooth",block:"nearest"});
+  r.querySelector(".s-oznaka").focus({preventScroll:true});
+}
+el("btn-dodaj-sis").onclick=dodajSistem;
+el("sis-lista").addEventListener("click",function(e){
+  var u=e.target.closest("[data-ukloni-sis]"); if(!u) return;
+  u.closest(".sis").remove(); numerisiSisteme();
+});
+
+/* k = postojeći klijent ili null; dodaj = otvori za dodavanje sistema postojećem */
+function otvoriKlijenta(k,dodaj){
+  el("dlg-klijent-h").textContent=k?(dodaj?"Dodaj sisteme":"Izmeni klijenta"):"Novi klijent";
+  el("k-id").value=k?k.id:"";
+  el("k-naziv").value=k?k.naziv:"";
+  el("k-adresa").value=k?(k.adresa||""):"";
+  el("k-osoba").value=k?(k.osoba||""):"";
+  el("k-tel").value=k?(k.tel||""):"";
+  el("k-email").value=k?(k.email||""):"";
+  el("sis-naslov").textContent=k?"Novi sistemi — opciono, dodaj sve odjednom":"Sistemi — dodaj sve odjednom";
+  el("sis-lista").innerHTML="";
+  if(!k||dodaj) dodajSistemTih();
+  el("dlg-klijent").showModal();
+}
+function dodajSistemTih(){ el("sis-lista").appendChild(redSistema()); numerisiSisteme(); }
+el("btn-nov-klijent").onclick=function(){ otvoriKlijenta(null,false); };
+
+el("btn-sacuvaj-klijent").onclick=function(){
+  var naziv=el("k-naziv").value.trim();
+  if(!naziv){ el("k-naziv").focus(); return; }
+  var id=el("k-id").value;
+  var obj={naziv:naziv,adresa:el("k-adresa").value.trim(),kontakt_osoba:el("k-osoba").value.trim(),
+    telefon:el("k-tel").value.trim(),email:el("k-email").value.trim()};
+  if(id) obj.id=id;
+  var sistemi=Array.prototype.map.call(el("sis-lista").children,function(r){
+    var tip=r.querySelector(".s-tip").value;
+    return {tip:tip,oznaka:r.querySelector(".s-oznaka").value.trim(),
+      interval_meseci:parseInt(r.querySelector(".s-interval").value,10)||podrazumevaniInterval(tip),
+      datum:r.querySelector(".s-datum").value,vrsta:r.querySelector(".s-vrsta").value,
+      opis:r.querySelector(".s-opis").value.trim()};
+  });
+  radi(this,async function(){
+    var r=await sb.rpc("sacuvaj_objekat_sa_sistemima",{p_objekat:obj,p_sistemi:sistemi});
+    if(r.error) throw r.error;
+    izabran=r.data;
+  }).then(function(ok){ if(ok) el("dlg-klijent").close(); });
+};
+
+/* ---------- dijalog: instalacija (izmena / pojedinačno) ---------- */
+el("i-tip").innerHTML=opcije(TIPOVI,"PP aparati");
+el("i-tip").onchange=function(){ el("i-interval").value=podrazumevaniInterval(this.value); };
+
+function otvoriInst(inst,kid){
+  if(!db.klijenti.length){ alert("Prvo dodaj klijenta."); return; }
+  el("dlg-inst-h").textContent=inst?"Izmeni instalaciju":"Nova instalacija";
+  el("i-id").value=inst?inst.id:"";
+  el("i-klijent").innerHTML=db.klijenti.slice().sort(function(a,b){
+    return a.naziv.localeCompare(b.naziv,"sr"); })
+    .map(function(k){ return '<option value="'+k.id+'">'+esc(k.naziv)+"</option>"; }).join("");
+  el("i-klijent").value=inst?inst.kid:(kid||izabran||db.klijenti[0].id);
+  el("i-klijent").disabled=!!inst;
+  el("i-tip").value=inst?inst.tip:"PP aparati";
+  el("i-oznaka").value=inst?(inst.oznaka||""):"";
+  el("i-interval").value=inst?(inst.interval||6):6;
+  var n=serviseZa(inst?inst.id:"").length;
+  el("dlg-inst-sub").textContent=inst?(n+" "+rec(n,"upisan rad","upisana rada","upisanih radova")):"";
+  el("btn-obrisi-inst").hidden=!inst;
+  el("dlg-inst").showModal();
+}
+el("btn-nova-inst-global").onclick=function(){
+  var k=izabran?klijent(izabran):null;
+  if(k) otvoriKlijenta(k,true); else otvoriInst(null,null);
+};
+
+el("btn-sacuvaj-inst").onclick=function(){
+  var id=el("i-id").value, tip=el("i-tip").value;
+  var p={tip:tip,oznaka:el("i-oznaka").value.trim(),
+    interval_meseci:parseInt(el("i-interval").value,10)||podrazumevaniInterval(tip)};
+  var kid=el("i-klijent").value;
+  radi(this,async function(){
+    var r;
+    if(id) r=await sb.from("instalacije").update(p).eq("id",id);
+    else { p.objekat_id=kid; r=await sb.from("instalacije").insert(p); izabran=kid; }
+    if(r.error) throw r.error;
+  }).then(function(ok){ if(ok) el("dlg-inst").close(); });
+};
+el("btn-obrisi-inst").onclick=function(){
+  var id=el("i-id").value; if(!id) return;
+  var n=serviseZa(id).length;
+  if(!confirm("Obrisati instalaciju i "+n+" "+rec(n,"upisan rad","upisana rada","upisanih radova")+"?")) return;
+  radi(this,async function(){
+    var r=await sb.from("instalacije").delete().eq("id",id);
+    if(r.error) throw r.error;
+  }).then(function(ok){ if(ok) el("dlg-inst").close(); });
+};
+
+/* ---------- dijalog: servis ---------- */
+el("s-vrsta").innerHTML=opcije(VRSTE,"Redovna kontrola");
+function napomenaVrste(){
+  el("s-napomena").textContent = resetuje(el("s-vrsta").value)
+    ? "Ovaj rad pomera sledeći rok."
+    : "Ovaj rad se beleži u istoriji, ali ne pomera rok sledeće kontrole.";
+}
+el("s-vrsta").onchange=napomenaVrste;
+
+function otvoriServis(iid){
+  if(!db.instalacije.length){ alert("Prvo dodaj bar jednu instalaciju."); return; }
+  var lista=db.instalacije.map(function(i){
+    var k=klijent(i.kid);
+    return {id:i.id,tekst:(k?k.naziv:"—")+" — "+imeInst(i)};
+  }).sort(function(a,b){ return a.tekst.localeCompare(b.tekst,"sr"); });
+  el("s-inst").innerHTML=lista.map(function(x){
+    return '<option value="'+x.id+'">'+esc(x.tekst)+"</option>"; }).join("");
+  if(iid) el("s-inst").value=iid;
+  el("s-datum").value=iso(danas());
+  el("s-vrsta").value="Redovna kontrola";
+  el("s-opis").value="";
+  napomenaVrste();
+  el("dlg-servis-sub").textContent="";
+  el("dlg-servis").showModal();
+}
+el("btn-nov-servis").onclick=function(){ otvoriServis(null); };
+
+el("btn-sacuvaj-servis").onclick=function(){
+  var iid=el("s-inst").value, datum=el("s-datum").value;
+  if(!iid||!datum) return;
+  var p={instalacija_id:iid,datum:datum,vrsta:el("s-vrsta").value,opis:el("s-opis").value.trim()};
+  radi(this,async function(){
+    var r=await sb.from("servisi").insert(p);
+    if(r.error) throw r.error;
+    var inst=instalacija(iid); if(inst) izabran=inst.kid;
+  }).then(function(ok){ if(ok) el("dlg-servis").close(); });
+};
+
+/* ---------- podaci ---------- */
+function skini(naziv,sadrzaj,tip){
+  var b=new Blob([sadrzaj],{type:tip}),u=URL.createObjectURL(b),a=document.createElement("a");
+  a.href=u; a.download=naziv; document.body.appendChild(a); a.click();
+  document.body.removeChild(a); setTimeout(function(){ URL.revokeObjectURL(u); },800);
+}
+el("btn-csv").onclick=function(){
+  var r=[["Objekat","Adresa","Kontakt","Telefon","Instalacija","Oznaka","Interval (mes.)","Poslednja kontrola","Rok","Status"]];
+  sveInstSort().forEach(function(x){
+    var k=klijent(x.inst.kid)||{};
+    r.push([k.naziv||"—",k.adresa||"",k.osoba||"",k.tel||"",x.inst.tip,x.inst.oznaka||"",
+      x.inst.interval||6, x.st.poslednji?srpski(x.st.poslednji.datum):"—",
+      x.st.rok?srpskiD(x.st.rok):"—", x.st.tekst]);
+  });
+  var csv="﻿"+r.map(function(x){ return x.map(function(c){
+    return '"'+String(c).replace(/"/g,'""')+'"'; }).join(";"); }).join("\r\n");
+  skini("popis-instalacija-"+iso(danas())+".csv",csv,"text/csv;charset=utf-8");
+};
+el("btn-stampa").onclick=function(){
+  izabran=null; prikaziTab("poziv","Popis za pozive"); crtaj();
+  setTimeout(function(){ window.print(); },140);
+};
+
+/* ---------- korisnici (admin) ---------- */
+async function crtajKorisnike(){
+  var box=el("lista-korisnika");
+  box.innerHTML='<p class="note">Učitavanje…</p>';
+  var r=await sb.from("profili").select("*").order("created_at");
+  if(r.error){ box.innerHTML='<p class="note">Greška: '+esc(r.error.message)+'</p>'; return; }
+  box.innerHTML=r.data.map(function(p){
+    var ja=profil&&p.id===profil.id;
+    return '<div class="urow"><div><div class="uime">'+esc(p.ime||p.email)+(ja?" (ti)":"")+'</div>'+
+      '<div class="umail">'+esc(p.email||"")+'</div></div>'+
+      '<select data-uloga="'+p.id+'" aria-label="Uloga"'+(ja?" disabled":"")+'>'+
+        opcije(["admin","serviser"],p.uloga)+'</select></div>';
+  }).join("");
+}
+el("lista-korisnika").addEventListener("change",async function(e){
+  var s=e.target.closest("[data-uloga]"); if(!s) return;
+  s.disabled=true;
+  var r=await sb.from("profili").update({uloga:s.value}).eq("id",s.dataset.uloga);
+  if(r.error){ alert("Greška: "+r.error.message); crtajKorisnike(); }
+  else s.disabled=false;
+});
+
+/* ---------- prijava ---------- */
+function prikaz(stanje){ // "login" | "app" | "ucitavanje"
+  el("login").hidden=(stanje!=="login");
+  el("app").hidden=(stanje!=="app");
+  el("ucitavanje").hidden=(stanje!=="ucitavanje");
+}
+el("login-forma").onsubmit=async function(e){
+  e.preventDefault();
+  var err=el("login-err"); err.hidden=true;
+  el("btn-login").disabled=true;
+  var r=await sb.auth.signInWithPassword({email:el("l-email").value.trim(),password:el("l-lozinka").value});
+  el("btn-login").disabled=false;
+  if(r.error){
+    err.textContent=/invalid/i.test(r.error.message)?"Pogrešan e-mail ili lozinka.":"Prijava nije uspela: "+r.error.message;
+    err.hidden=false; }
+};
+el("btn-odjava").onclick=function(){ sb.auth.signOut(); };
+
+async function pokreni(session){
+  if(!session){
+    trenutniKorisnik=null; profil=null; db={klijenti:[],instalacije:[],servisi:[]}; izabran=null;
+    el("l-lozinka").value=""; prikaz("login"); return;
+  }
+  if(trenutniKorisnik===session.user.id) return; // osvežen token, ne učitavaj ponovo
+  trenutniKorisnik=session.user.id;
+  prikaz("ucitavanje");
+  try{
+    var p=await sb.from("profili").select("*").eq("id",session.user.id).maybeSingle();
+    profil=p.data||{id:session.user.id,email:session.user.email,uloga:"serviser"};
+    el("who").textContent=(profil.ime||profil.email||session.user.email)+(profil.uloga==="admin"?" · admin":"");
+    el("nav-korisnici").hidden=(profil.uloga!=="admin");
+    await ucitaj();
+    prikaziTab("poziv"); crtaj(); prikaz("app");
+  }catch(e){
+    trenutniKorisnik=null;
+    alert("Podaci se nisu učitali: "+(e&&e.message?e.message:e));
+    await sb.auth.signOut();
+  }
+}
+/* callback ne sme da čeka supabase pozive (deadlock) — odloži */
+sb.auth.onAuthStateChange(function(event,session){
+  setTimeout(function(){ pokreni(session); },0);
+});
+})();
+</script>
+</body>
+</html>

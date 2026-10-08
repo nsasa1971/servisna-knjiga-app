@@ -231,6 +231,10 @@ dialog::backdrop{background:rgba(14,28,32,.5)}
 .sis-h{display:flex;align-items:center;justify-content:space-between;margin-bottom:9px}
 .sis-n{font-family:var(--mono);font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--brand);font-weight:600}
 .sis-add{width:100%;margin-bottom:4px}
+.linkbtn{background:none;border:0;color:var(--brand-2);font:inherit;font-size:13px;cursor:pointer;
+  text-decoration:underline;padding:8px 0 0;display:block;margin:0 auto}
+.okmsg{background:var(--green-bg);border:1px solid var(--green-line);color:var(--green);
+  border-radius:var(--r-sm);padding:9px 11px;font-size:13.5px;margin-bottom:12px}
 .urow{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:10px;align-items:center;
   padding:9px 0;border-bottom:1px solid var(--line)}
 .urow:last-child{border-bottom:0}
@@ -256,12 +260,28 @@ dialog.wide{width:min(560px,calc(100vw - 26px))}
     </span>
     <h1>Servisna knjiga</h1>
     <div class="sub">Vatrosprem Inovacije · interna aplikacija</div>
+    <div class="okmsg" id="login-ok" role="status" hidden></div>
     <div class="login-err" id="login-err" role="alert" hidden></div>
     <div class="field"><label for="l-email">E-mail</label>
       <input id="l-email" type="email" inputmode="email" autocomplete="username" required></div>
     <div class="field"><label for="l-lozinka">Lozinka</label>
       <input id="l-lozinka" type="password" autocomplete="current-password" required></div>
     <button class="act accent" id="btn-login" type="submit">Prijavi se</button>
+    <button class="linkbtn" id="btn-zaboravljena" type="button">Zaboravljena lozinka?</button>
+  </form>
+</div>
+
+<!-- ===== postavljanje lozinke (poziv / reset) ===== -->
+<div id="lozinka" class="login-wrap" hidden>
+  <form class="login-card" id="lozinka-forma">
+    <h1>Postavi lozinku</h1>
+    <div class="sub">Izaberi lozinku kojom ćeš se prijavljivati</div>
+    <div class="login-err" id="lozinka-err" role="alert" hidden></div>
+    <div class="field"><label for="n-lozinka">Nova lozinka (min. 8 znakova)</label>
+      <input id="n-lozinka" type="password" autocomplete="new-password" minlength="8" required></div>
+    <div class="field"><label for="n-lozinka2">Ponovi lozinku</label>
+      <input id="n-lozinka2" type="password" autocomplete="new-password" minlength="8" required></div>
+    <button class="act accent" id="btn-lozinka" type="submit">Sačuvaj i uđi</button>
   </form>
 </div>
 
@@ -335,7 +355,22 @@ dialog.wide{width:min(560px,calc(100vw - 26px))}
       <h3>Korisnici</h3>
       <div class="sub">Admin vidi sve naloge i menja uloge</div>
       <div id="lista-korisnika"></div>
-      <p class="note">Nove naloge za sada pravi admin u Supabase dashboardu (Authentication → Users).</p>
+    </div>
+    <div class="panel">
+      <h3>Pozovi korisnika</h3>
+      <div class="sub">Dobija mejl sa linkom za postavljanje lozinke</div>
+      <div class="okmsg" id="poziv-ok" role="status" hidden></div>
+      <div class="login-err" id="poziv-err" role="alert" hidden></div>
+      <form id="poziv-forma">
+        <div class="two">
+          <div class="field"><label for="p-ime">Ime</label><input id="p-ime" placeholder="Nikola"></div>
+          <div class="field"><label for="p-uloga">Uloga</label>
+            <select id="p-uloga"><option value="serviser">serviser</option><option value="admin">admin</option></select></div>
+        </div>
+        <div class="field"><label for="p-email">E-mail</label>
+          <input id="p-email" type="email" inputmode="email" required placeholder="ime@firma.rs"></div>
+        <button class="act accent" id="btn-pozovi" type="submit">Pošalji poziv</button>
+      </form>
     </div>
   </section>
 
@@ -460,6 +495,9 @@ function podrazumevaniInterval(tip){
 
 /* ---------- podaci (Supabase) ---------- */
 var cfg=window.APP_CONFIG||{};
+/* link iz mejla (poziv / reset lozinke) stiže sa tokenima u #hash — pre createClient, jer ga klijent čisti */
+var trebaLozinka=/[#&]type=(invite|recovery)/.test(location.hash);
+var greskaLinka=/[#&]error_code=otp_expired/.test(location.hash)||/[#&]error=access_denied/.test(location.hash);
 var sb=window.supabase.createClient(cfg.SUPABASE_URL,cfg.SUPABASE_ANON_KEY);
 var db={klijenti:[],instalacije:[],servisi:[]}, izabran=null, profil=null, trenutniKorisnik=null;
 
@@ -965,8 +1003,9 @@ el("lista-korisnika").addEventListener("change",async function(e){
 });
 
 /* ---------- prijava ---------- */
-function prikaz(stanje){ // "login" | "app" | "ucitavanje"
+function prikaz(stanje){ // "login" | "app" | "ucitavanje" | "lozinka"
   el("login").hidden=(stanje!=="login");
+  el("lozinka").hidden=(stanje!=="lozinka");
   el("app").hidden=(stanje!=="app");
   el("ucitavanje").hidden=(stanje!=="ucitavanje");
 }
@@ -982,11 +1021,61 @@ el("login-forma").onsubmit=async function(e){
 };
 el("btn-odjava").onclick=function(){ sb.auth.signOut(); };
 
+el("btn-zaboravljena").onclick=async function(){
+  var email=el("l-email").value.trim(), err=el("login-err"), ok=el("login-ok");
+  err.hidden=true; ok.hidden=true;
+  if(!email){ err.textContent="Upiši e-mail iznad, pa klikni ponovo."; err.hidden=false; el("l-email").focus(); return; }
+  var r=await sb.auth.resetPasswordForEmail(email,{redirectTo:location.origin+location.pathname});
+  if(r.error){ err.textContent="Slanje nije uspelo: "+r.error.message; err.hidden=false; }
+  else { ok.textContent="Ako nalog postoji, poslat je mejl sa linkom za novu lozinku."; ok.hidden=false; }
+};
+
+el("lozinka-forma").onsubmit=async function(e){
+  e.preventDefault();
+  var err=el("lozinka-err"); err.hidden=true;
+  var a=el("n-lozinka").value;
+  if(a.length<8){ err.textContent="Lozinka mora imati bar 8 znakova."; err.hidden=false; return; }
+  if(a!==el("n-lozinka2").value){ err.textContent="Lozinke se ne poklapaju."; err.hidden=false; return; }
+  el("btn-lozinka").disabled=true;
+  var r=await sb.auth.updateUser({password:a});
+  el("btn-lozinka").disabled=false;
+  if(r.error){ err.textContent="Nije uspelo: "+r.error.message; err.hidden=false; return; }
+  trebaLozinka=false;
+  history.replaceState(null,"",location.pathname+location.search);
+  el("n-lozinka").value=""; el("n-lozinka2").value="";
+  var ss=await sb.auth.getSession();
+  pokreni(ss.data.session);
+};
+
+/* poziv novog korisnika (Netlify funkcija proverava da je pozivalac admin) */
+el("poziv-forma").onsubmit=async function(e){
+  e.preventDefault();
+  var ok=el("poziv-ok"), err=el("poziv-err"); ok.hidden=true; err.hidden=true;
+  var dugme=el("btn-pozovi"); dugme.disabled=true;
+  try{
+    var ss=await sb.auth.getSession();
+    if(!ss.data.session) throw new Error("Sesija je istekla, prijavi se ponovo.");
+    var email=el("p-email").value.trim();
+    var r=await fetch("/.netlify/functions/invite-user",{method:"POST",
+      headers:{"Content-Type":"application/json",Authorization:"Bearer "+ss.data.session.access_token},
+      body:JSON.stringify({email:email,ime:el("p-ime").value.trim(),uloga:el("p-uloga").value})});
+    var j={}; try{ j=await r.json(); }catch(x){}
+    if(!r.ok) throw new Error(j.error||("Greška "+r.status));
+    ok.textContent="Poziv je poslat na "+email+".";
+    ok.hidden=false; el("poziv-forma").reset(); crtajKorisnike();
+  }catch(x){ err.textContent=x.message; err.hidden=false; }
+  finally{ dugme.disabled=false; }
+};
+
 async function pokreni(session){
   if(!session){
     trenutniKorisnik=null; profil=null; db={klijenti:[],instalacije:[],servisi:[]}; izabran=null;
-    el("l-lozinka").value=""; prikaz("login"); return;
+    trebaLozinka=false; // link bez važeće sesije (istekao) ne sme da blokira običnu prijavu
+    el("l-lozinka").value="";
+    if(greskaLinka){ greskaLinka=false; el("login-err").textContent="Link je istekao ili je već iskorišćen. Zatraži novi (Zaboravljena lozinka) ili da te admin ponovo pozove."; el("login-err").hidden=false; }
+    prikaz("login"); return;
   }
+  if(trebaLozinka){ prikaz("lozinka"); return; }
   if(trenutniKorisnik===session.user.id) return; // osvežen token, ne učitavaj ponovo
   trenutniKorisnik=session.user.id;
   prikaz("ucitavanje");

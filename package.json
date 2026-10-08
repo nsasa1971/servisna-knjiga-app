@@ -1,0 +1,9 @@
+{
+  "name": "servisna-knjiga-app",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "node --test netlify/test/*.test.mjs",
+    "podsetnici:dry-run": "DRY_RUN=1 node scripts/podsetnici-dry-run.mjs"
+  }
+}

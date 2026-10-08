@@ -185,7 +185,7 @@ dialog::backdrop{background:rgba(14,28,32,.5)}
 
 @media print{
   body{background:#fff;padding:0;font-size:12px}
-  nav,.banner,.btnrow,button,.gauge,.stats,#tab-klijenti,#tab-instalacije,#tab-podaci,#detalj{display:none !important}
+  nav,.banner,.btnrow,button,.gauge,.stats,#tab-klijenti,#tab-instalacije,#tab-podaci,#tab-arhiva,#detalj{display:none !important}
   header{position:static;background:#fff;color:#000;box-shadow:none;border-bottom:2px solid #000}
   .logo{display:none} .htext .mark{color:#555}
   li.row{border:0;border-bottom:1px solid #bbb;border-radius:0;background:none !important;
@@ -242,6 +242,18 @@ dialog::backdrop{background:rgba(14,28,32,.5)}
 .urow .umail{font-family:var(--mono);font-size:11px;color:var(--muted);overflow-wrap:anywhere}
 .urow select{width:auto;padding:7px 9px;font-size:13.5px}
 dialog.wide{width:min(560px,calc(100vw - 26px))}
+button.act.danger{background:var(--red)} button.act.danger:hover{background:#B82E20}
+button.act.ghost.danger{background:var(--surface);color:var(--red);border:1px solid var(--red-line)}
+button.act.ghost.danger:hover{background:var(--red-bg);border-color:var(--red)}
+.dlg-b p{margin:0 0 10px;line-height:1.5}
+.dlg-b p.warn{font-size:13.5px;color:var(--muted)}
+.arh-h{display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 10px}
+.arh-h h3{margin:0}
+.arh-lista{list-style:none;margin:10px 0 0;padding:0}
+.arh-lista li{display:grid;grid-template-columns:78px minmax(0,1fr);gap:8px;font-size:13px;
+  padding:5px 0;border-top:1px dashed var(--line)}
+.arh-lista li>*{min-width:0;overflow-wrap:anywhere}
+.arh-lista time{font-family:var(--mono);font-size:11px;color:var(--muted)}
 @media print{ .huser,#login{display:none !important} }
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -309,6 +321,7 @@ dialog.wide{width:min(560px,calc(100vw - 26px))}
   <button role="tab" aria-selected="false" data-tab="klijenti"><span class="n" id="n-klijenti">0</span>Klijenti</button>
   <button role="tab" aria-selected="false" data-tab="instalacije"><span class="n" id="n-inst">0</span>Instalacije</button>
   <button role="tab" aria-selected="false" data-tab="korisnici" id="nav-korisnici" hidden><span class="n">☺</span>Korisnici</button>
+  <button role="tab" aria-selected="false" data-tab="arhiva" id="nav-arhiva" hidden><span class="n" id="n-arhiva">0</span>Arhiva</button>
   <button role="tab" aria-selected="false" data-tab="podaci"><span class="n">↧</span>Podaci</button>
 </nav>
 
@@ -374,6 +387,14 @@ dialog.wide{width:min(560px,calc(100vw - 26px))}
     </div>
   </section>
 
+  <section id="tab-arhiva" class="sect" hidden>
+    <p class="eyebrow">Obrisani klijenti — istorija servisa je sačuvana</p>
+    <div class="btnrow" style="margin:0 0 13px">
+      <button class="act ghost" id="btn-arhiva-csv">Arhiva servisa (CSV)</button>
+    </div>
+    <div id="lista-arhive"></div>
+  </section>
+
   <section id="tab-podaci" class="sect" hidden>
     <p class="eyebrow">Izvoz</p>
     <div class="panel">
@@ -413,6 +434,19 @@ dialog.wide{width:min(560px,calc(100vw - 26px))}
   <div class="dlg-f">
     <button class="act ghost" data-close="dlg-klijent">Odustani</button>
     <button class="act accent" id="btn-sacuvaj-klijent">Sačuvaj</button>
+  </div>
+</dialog>
+
+<!-- brisanje klijenta (samo admin) -->
+<dialog id="dlg-brisanje">
+  <div class="dlg-h"><h2>Brisanje klijenta</h2></div>
+  <div class="dlg-b">
+    <p id="brisanje-pitanje"></p>
+    <p class="warn" id="brisanje-detalj"></p>
+  </div>
+  <div class="dlg-f">
+    <button class="act ghost" data-close="dlg-brisanje">Odustani</button>
+    <button class="act danger" id="btn-potvrdi-brisanje">Obriši klijenta</button>
   </div>
 </dialog>
 
@@ -499,12 +533,14 @@ var cfg=window.APP_CONFIG||{};
 var trebaLozinka=/[#&]type=(invite|recovery)/.test(location.hash);
 var greskaLinka=/[#&]error_code=otp_expired/.test(location.hash)||/[#&]error=access_denied/.test(location.hash);
 var sb=window.supabase.createClient(cfg.SUPABASE_URL,cfg.SUPABASE_ANON_KEY);
-var db={klijenti:[],instalacije:[],servisi:[]}, izabran=null, profil=null, trenutniKorisnik=null;
+var db={klijenti:[],instalacije:[],servisi:[]}, arhiva={klijenti:[],servisi:[]}, izabran=null, profil=null, trenutniKorisnik=null;
 
-async function sviRedovi(tabela){
+async function sviRedovi(tabela,filter){
   var out=[],od=0,korak=1000;
   for(;;){
-    var r=await sb.from(tabela).select("*").order("id").range(od,od+korak-1);
+    var q=sb.from(tabela).select("*");
+    if(filter) q=filter(q);
+    var r=await q.order("id").range(od,od+korak-1);
     if(r.error) throw r.error;
     out=out.concat(r.data);
     if(r.data.length<korak) break;
@@ -513,7 +549,11 @@ async function sviRedovi(tabela){
   return out;
 }
 async function ucitaj(){
-  var r=await Promise.all([sviRedovi("objekti"),sviRedovi("instalacije"),sviRedovi("servisi")]);
+  /* glavni ekran: samo aktivni klijenti i servisi vezani za instalaciju (arhiva ide posebno, samo adminu) */
+  var r=await Promise.all([
+    sviRedovi("objekti",function(q){ return q.is("arhiviran_at",null); }),
+    sviRedovi("instalacije"),
+    sviRedovi("servisi",function(q){ return q.not("instalacija_id","is",null); })]);
   db.klijenti=r[0].map(function(o){ return {id:o.id,naziv:o.naziv,adresa:o.adresa||"",
     osoba:o.kontakt_osoba||"",tel:o.telefon||"",email:o.email||""}; });
   db.instalacije=r[1].map(function(i){ return {id:i.id,kid:i.objekat_id,tip:i.tip,
@@ -521,6 +561,20 @@ async function ucitaj(){
   db.servisi=r[2].map(function(s){ return {id:s.id,iid:s.instalacija_id,datum:s.datum,
     vrsta:s.vrsta,opis:s.opis||""}; });
   if(izabran&&!klijent(izabran)) izabran=null;
+  if(jeAdmin()) await ucitajArhivu();
+}
+function jeAdmin(){ return !!profil&&profil.uloga==="admin"; }
+/* arhiva (admin): obrisani klijenti + servisi odvojeni od instalacija */
+async function ucitajArhivu(){
+  var r=await Promise.all([
+    sviRedovi("objekti",function(q){ return q.not("arhiviran_at","is",null); }),
+    sviRedovi("servisi",function(q){ return q.is("instalacija_id",null).not("objekat_id","is",null); })]);
+  arhiva.klijenti=r[0].map(function(o){ return {id:o.id,naziv:o.naziv,adresa:o.adresa||"",
+    osoba:o.kontakt_osoba||"",tel:o.telefon||"",email:o.email||"",arh:o.arhiviran_at}; })
+    .sort(function(a,b){ return a.arh<b.arh?1:-1; });
+  arhiva.servisi=r[1].map(function(s){ return {id:s.id,kid:s.objekat_id,datum:s.datum,vrsta:s.vrsta,
+    opis:s.opis||"",tip:s.sistem_tip||"",oznaka:s.sistem_oznaka||""}; })
+    .sort(function(a,b){ return a.datum<b.datum?1:-1; });
 }
 /* izvrši upis, pa osveži podatke; vraća true ako je uspelo */
 async function radi(dugme,fn){
@@ -668,6 +722,7 @@ function detaljHTML(k){
       (telefon?'<a class="act ghost sm" href="sms:'+esc(telefon)+'?&body='+encodeURIComponent(txt)+'">SMS</a>':"")+
       '<button class="act ghost sm" data-kopiraj="'+k.id+'">Kopiraj tekst</button>'+
       '<button class="act ghost sm" data-uredi-k="'+k.id+'">Izmeni klijenta</button>'+
+      (jeAdmin()?'<button class="act ghost danger sm" data-obrisi-k="'+k.id+'">Obriši klijenta</button>':"")+
     '</div>'+
     '<div class="divider">Instalacije<span class="sp"></span>'+
       '<button class="act ghost sm" data-nova-inst="'+k.id+'">Dodaj</button></div>';
@@ -731,12 +786,32 @@ function crtaj(){
     :'<li class="empty"><b>Nema instalacija</b>Instalacija je jedan sistem kod jednog klijenta — sprinkler, PP aparati, hidranti. Svaki ima svoj rok.</li>';
 
   detalj();
+  crtajArhivu();
+}
+
+function crtajArhivu(){
+  var box=el("lista-arhive"); if(!box) return;
+  el("n-arhiva").textContent=arhiva.klijenti.length;
+  if(!arhiva.klijenti.length){
+    box.innerHTML='<div class="empty"><b>Arhiva je prazna</b>Obrisani klijenti i njihova istorija servisa pojaviće se ovde.</div>';
+    return; }
+  box.innerHTML=arhiva.klijenti.map(function(k){
+    var sv=arhiva.servisi.filter(function(s){ return s.kid===k.id; });
+    return '<div class="panel"><div class="arh-h"><h3>'+esc(k.naziv)+'</h3></div>'+
+      '<div class="sub">'+esc(k.adresa||"bez adrese")+(k.osoba?" · "+esc(k.osoba):"")+
+        ' · obrisan '+srpskiD(new Date(k.arh))+'</div>'+
+      (sv.length?'<ul class="arh-lista">'+sv.map(function(s){
+        var sis=(s.tip||"")+(s.oznaka?" — "+s.oznaka:"");
+        return '<li><time>'+srpski(s.datum)+'</time><span><b>'+esc(s.vrsta||"Redovna kontrola")+'</b>'+
+          (sis?" · "+esc(sis):"")+(s.opis?"<br>"+esc(s.opis):"")+'</span></li>';
+      }).join("")+'</ul>':'<p class="note">Nema sačuvanih servisa.</p>')+'</div>';
+  }).join("");
 }
 
 
 /* ---------- tabovi ---------- */
-var TABOVI=["poziv","klijenti","instalacije","korisnici","podaci"];
-var naslovi={poziv:"Za poziv",klijenti:"Klijenti",instalacije:"Instalacije",korisnici:"Korisnici",podaci:"Podaci"};
+var TABOVI=["poziv","klijenti","instalacije","korisnici","arhiva","podaci"];
+var naslovi={poziv:"Za poziv",klijenti:"Klijenti",instalacije:"Instalacije",korisnici:"Korisnici",arhiva:"Arhiva",podaci:"Podaci"};
 function prikaziTab(t,naslov){
   Array.prototype.forEach.call(document.querySelectorAll("nav button"),function(x){
     x.setAttribute("aria-selected",x.dataset.tab===t?"true":"false"); });
@@ -765,6 +840,9 @@ document.addEventListener("click",function(e){
 
   var uk=t.closest("[data-uredi-k]");
   if(uk){ e.stopPropagation(); otvoriKlijenta(klijent(uk.dataset.urediK),false); return; }
+
+  var ob=t.closest("[data-obrisi-k]");
+  if(ob){ e.stopPropagation(); otvoriBrisanje(klijent(ob.dataset.obrisiK)); return; }
 
   var ni=t.closest("[data-nova-inst]");
   if(ni){ e.stopPropagation(); otvoriKlijenta(klijent(ni.dataset.novaInst),true); return; }
@@ -871,6 +949,27 @@ el("btn-sacuvaj-klijent").onclick=function(){
   }).then(function(ok){ if(ok) el("dlg-klijent").close(); });
 };
 
+/* ---------- brisanje klijenta (samo admin; stvarnu zaštitu daje obrisi_klijenta() + RLS) ---------- */
+var zaBrisanje=null;
+function otvoriBrisanje(k){
+  if(!k||!jeAdmin()) return;
+  zaBrisanje=k.id;
+  var n=instZa(k.id).length, sv=0;
+  instZa(k.id).forEach(function(i){ sv+=serviseZa(i.id).length; });
+  el("brisanje-pitanje").textContent="Da li ste sigurni da želite da obrišete klijenta "+k.naziv+"? Ova akcija je nepovratna.";
+  el("brisanje-detalj").textContent="Instalacije koje se brišu: "+n+
+    ". Istorija servisa (zapisa: "+sv+") ostaje sačuvana u tabu Arhiva.";
+  el("dlg-brisanje").showModal();
+}
+el("btn-potvrdi-brisanje").onclick=function(){
+  var id=zaBrisanje; if(!id) return;
+  radi(this,async function(){
+    var r=await sb.rpc("obrisi_klijenta",{p_objekat_id:id});
+    if(r.error) throw r.error;
+    if(izabran===id) izabran=null;
+  }).then(function(ok){ if(ok){ zaBrisanje=null; el("dlg-brisanje").close(); } });
+};
+
 /* ---------- dijalog: instalacija (izmena / pojedinačno) ---------- */
 el("i-tip").innerHTML=opcije(TIPOVI,"PP aparati");
 el("i-tip").onchange=function(){ el("i-interval").value=podrazumevaniInterval(this.value); };
@@ -975,6 +1074,17 @@ el("btn-csv").onclick=function(){
     return '"'+String(c).replace(/"/g,'""')+'"'; }).join(";"); }).join("\r\n");
   skini("popis-instalacija-"+iso(danas())+".csv",csv,"text/csv;charset=utf-8");
 };
+el("btn-arhiva-csv").onclick=function(){
+  var r=[["Klijent","Adresa","Obrisan","Sistem","Oznaka","Datum","Vrsta rada","Opis"]];
+  arhiva.servisi.forEach(function(s){
+    var k=arhiva.klijenti.filter(function(x){ return x.id===s.kid; })[0]||{};
+    r.push([k.naziv||"—",k.adresa||"",k.arh?srpskiD(new Date(k.arh)):"",s.tip,s.oznaka,
+      srpski(s.datum),s.vrsta,s.opis]);
+  });
+  var csv="﻿"+r.map(function(x){ return x.map(function(c){
+    return '"'+String(c).replace(/"/g,'""')+'"'; }).join(";"); }).join("\r\n");
+  skini("arhiva-servisa-"+iso(danas())+".csv",csv,"text/csv;charset=utf-8");
+};
 el("btn-stampa").onclick=function(){
   izabran=null; prikaziTab("poziv","Popis za pozive"); crtaj();
   setTimeout(function(){ window.print(); },140);
@@ -1069,7 +1179,7 @@ el("poziv-forma").onsubmit=async function(e){
 
 async function pokreni(session){
   if(!session){
-    trenutniKorisnik=null; profil=null; db={klijenti:[],instalacije:[],servisi:[]}; izabran=null;
+    trenutniKorisnik=null; profil=null; db={klijenti:[],instalacije:[],servisi:[]}; arhiva={klijenti:[],servisi:[]}; izabran=null;
     trebaLozinka=false; // link bez važeće sesije (istekao) ne sme da blokira običnu prijavu
     el("l-lozinka").value="";
     if(greskaLinka){ greskaLinka=false; el("login-err").textContent="Link je istekao ili je već iskorišćen. Zatraži novi (Zaboravljena lozinka) ili da te admin ponovo pozove."; el("login-err").hidden=false; }
@@ -1084,6 +1194,7 @@ async function pokreni(session){
     profil=p.data||{id:session.user.id,email:session.user.email,uloga:"serviser"};
     el("who").textContent=(profil.ime||profil.email||session.user.email)+(profil.uloga==="admin"?" · admin":"");
     el("nav-korisnici").hidden=(profil.uloga!=="admin");
+    el("nav-arhiva").hidden=(profil.uloga!=="admin");
     await ucitaj();
     prikaziTab("poziv"); crtaj(); prikaz("app");
   }catch(e){

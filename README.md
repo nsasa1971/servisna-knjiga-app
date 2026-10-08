@@ -69,6 +69,15 @@ i šalje **jedan zbirni mejl** za sve instalacije koje su ušle u zonu **30 dana
 - Provera bez slanja i bez upisa:
   `SUPABASE_URL=… SUPABASE_SERVICE_ROLE_KEY=… ADMIN_EMAIL=a@b.rs npm run podsetnici:dry-run`
 
+## Brisanje klijenta i arhiva
+
+Admin u detalju klijenta ima dugme **Obriši klijenta** (uz potvrdu). Brisanje je *soft delete*: objekat dobija
+`arhiviran_at` i nestaje sa glavnog ekrana, njegove **instalacije se brišu** (zajedno sa poslatim podsetnicima),
+a **servisi se čuvaju** — odvajaju se od instalacije (`instalacija_id = NULL`) uz snimak objekta i sistema
+(`objekat_id`, `sistem_tip`, `sistem_oznaka`). Admin ih vidi u tabu **Arhiva** (uz CSV izvoz); ostali korisnici ih ne vide.
+Logika je u funkciji `obrisi_klijenta(uuid)` (proverava `je_admin()`), a RLS sprečava izmenu/dodavanje na arhiviran objekat.
+**Postojeća baza:** ponovo pokreni ceo `supabase/schema.sql` (idempotentan; dodaje kolone, popunjava snimak za stare servise).
+
 ## Korisnici
 
 Tab **Korisnici** (samo admin): promena uloge i **Pošalji poziv** (ime, e-mail, uloga). Pozvani dobija mejl,

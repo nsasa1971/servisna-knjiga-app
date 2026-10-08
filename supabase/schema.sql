@@ -46,6 +46,50 @@ create table if not exists public.servisi (
 );
 create index if not exists servisi_instalacija_idx on public.servisi(instalacija_id, datum);
 
+-- ---------- arhiviranje klijenta (brisanje) ---------------------------
+-- Klijent se ne briše fizički: objekat dobija arhiviran_at (soft delete),
+-- instalacije se brišu, a servisi ostaju kao arhivski zapisi. Zato servis
+-- čuva sopstveni snimak objekta i sistema (objekat_id, sistem_tip,
+-- sistem_oznaka) i instalacija_id sme da bude NULL. Za servise ODVOJENE
+-- od instalacije važi: instalacija_id is null => arhiva (vidi je samo admin).
+alter table public.objekti
+  add column if not exists arhiviran_at timestamptz,
+  add column if not exists arhivirao    uuid references public.profili(id) on delete set null;
+
+alter table public.servisi
+  add column if not exists objekat_id     uuid references public.objekti(id) on delete set null,
+  add column if not exists sistem_tip     text,
+  add column if not exists sistem_oznaka  text;
+alter table public.servisi alter column instalacija_id drop not null;
+create index if not exists servisi_objekat_idx on public.servisi(objekat_id);
+
+-- Backfill snimka za već postojeće servise.
+update public.servisi s
+   set objekat_id = i.objekat_id, sistem_tip = i.tip, sistem_oznaka = i.oznaka
+  from public.instalacije i
+ where s.instalacija_id = i.id and s.objekat_id is null;
+
+-- Novi servis automatski upisuje snimak objekta/sistema.
+create or replace function public.servis_snimak()
+returns trigger
+language plpgsql
+set search_path = public
+as $$
+begin
+  if new.instalacija_id is not null then
+    select i.objekat_id, i.tip, i.oznaka
+      into new.objekat_id, new.sistem_tip, new.sistem_oznaka
+      from instalacije i where i.id = new.instalacija_id;
+  end if;
+  return new;
+end;
+$$;
+
+drop trigger if exists servisi_snimak on public.servisi;
+create trigger servisi_snimak
+  before insert on public.servisi
+  for each row execute function public.servis_snimak();
+
 -- Evidencija poslatih email podsetnika (za izbegavanje duplikata).
 -- Jedan podsetnik po (instalacija, prag, rok): kad servis pomeri rok,
 -- rok_datum se menja pa se podsetnik za novi ciklus ponovo šalje.
@@ -158,7 +202,10 @@ begin
       kontakt_osoba = coalesce(p_objekat->>'kontakt_osoba', kontakt_osoba),
       telefon       = coalesce(p_objekat->>'telefon', telefon),
       email         = coalesce(p_objekat->>'email', email)
-    where id = v_id;
+    where id = v_id and arhiviran_at is null;
+    if not found then
+      raise exception 'Klijent ne postoji ili je obrisan (arhiviran)';
+    end if;
   else
     insert into objekti (naziv, adresa, kontakt_osoba, telefon, email)
     values (
@@ -194,6 +241,40 @@ begin
 end;
 $$;
 
+-- Brisanje (arhiviranje) klijenta — samo admin.
+-- Briše sve instalacije klijenta (sa podsetnicima), ali istoriju servisa
+-- zadržava: servis se odvaja od instalacije (instalacija_id = NULL) uz snimak
+-- sistema, a objekat dobija arhiviran_at i nestaje sa glavnog ekrana.
+create or replace function public.obrisi_klijenta(p_objekat_id uuid)
+returns void
+language plpgsql
+security invoker
+set search_path = public
+as $$
+begin
+  if not public.je_admin() then
+    raise exception 'Samo admin može da briše klijente';
+  end if;
+
+  perform 1 from objekti where id = p_objekat_id and arhiviran_at is null for update;
+  if not found then
+    raise exception 'Klijent ne postoji ili je već obrisan';
+  end if;
+
+  update servisi s
+     set objekat_id = i.objekat_id, sistem_tip = i.tip, sistem_oznaka = i.oznaka,
+         instalacija_id = null
+    from instalacije i
+   where s.instalacija_id = i.id and i.objekat_id = p_objekat_id;
+
+  delete from instalacije where objekat_id = p_objekat_id;
+
+  update objekti
+     set arhiviran_at = now(), arhivirao = auth.uid()
+   where id = p_objekat_id;
+end;
+$$;
+
 -- ---------- RLS --------------------------------------------------------
 
 alter table public.profili            enable row level security;
@@ -218,18 +299,56 @@ create policy profili_admin_all on public.profili
   for all to authenticated
   using (public.je_admin()) with check (public.je_admin());
 
--- objekti / instalacije / servisi: pun CRUD za sve ulogovane.
+-- objekti: svi ulogovani vide i menjaju AKTIVNE objekte; arhivirane vidi i
+-- menja samo admin, a fizički DELETE je dozvoljen samo adminu (aplikacija
+-- koristi obrisi_klijenta() koji arhivira umesto da briše).
 drop policy if exists objekti_all on public.objekti;
-create policy objekti_all on public.objekti
-  for all to authenticated using (true) with check (true);
+drop policy if exists objekti_select on public.objekti;
+create policy objekti_select on public.objekti
+  for select to authenticated using (arhiviran_at is null or public.je_admin());
 
+drop policy if exists objekti_insert on public.objekti;
+create policy objekti_insert on public.objekti
+  for insert to authenticated with check (arhiviran_at is null);
+
+drop policy if exists objekti_update on public.objekti;
+create policy objekti_update on public.objekti
+  for update to authenticated
+  using (arhiviran_at is null or public.je_admin())
+  with check (arhiviran_at is null or public.je_admin());
+
+drop policy if exists objekti_delete on public.objekti;
+create policy objekti_delete on public.objekti
+  for delete to authenticated using (public.je_admin());
+
+-- instalacije: pun CRUD, ali ne može da se doda/prebaci na arhiviran objekat.
 drop policy if exists instalacije_all on public.instalacije;
-create policy instalacije_all on public.instalacije
-  for all to authenticated using (true) with check (true);
+drop policy if exists instalacije_select on public.instalacije;
+create policy instalacije_select on public.instalacije
+  for select to authenticated using (true);
 
+drop policy if exists instalacije_insert on public.instalacije;
+create policy instalacije_insert on public.instalacije
+  for insert to authenticated
+  with check (exists (select 1 from public.objekti o where o.id = objekat_id and o.arhiviran_at is null));
+
+drop policy if exists instalacije_update on public.instalacije;
+create policy instalacije_update on public.instalacije
+  for update to authenticated
+  using (true)
+  with check (exists (select 1 from public.objekti o where o.id = objekat_id and o.arhiviran_at is null));
+
+drop policy if exists instalacije_delete on public.instalacije;
+create policy instalacije_delete on public.instalacije
+  for delete to authenticated using (true);
+
+-- servisi: pun CRUD nad servisima vezanim za instalaciju; arhivske servise
+-- (instalacija_id is null) vidi i dira samo admin.
 drop policy if exists servisi_all on public.servisi;
 create policy servisi_all on public.servisi
-  for all to authenticated using (true) with check (true);
+  for all to authenticated
+  using (instalacija_id is not null or public.je_admin())
+  with check (instalacija_id is not null or public.je_admin());
 
 -- podsetnici_poslati: bez politika => klijenti (anon/authenticated) nemaju
 -- pristup. Piše je samo Netlify funkcija sa service_role ključem
@@ -244,3 +363,5 @@ grant select, update on public.profili to authenticated;
 grant delete on public.profili to authenticated;  -- ograničeno RLS-om na admina
 grant execute on function public.sacuvaj_objekat_sa_sistemima(jsonb, jsonb) to authenticated;
 revoke execute on function public.sacuvaj_objekat_sa_sistemima(jsonb, jsonb) from anon;
+grant execute on function public.obrisi_klijenta(uuid) to authenticated;
+revoke execute on function public.obrisi_klijenta(uuid) from anon;
